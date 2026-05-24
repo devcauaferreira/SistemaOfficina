@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Cliente - Sistema de Mecânica</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <div class="page-nav"><a href="index.html">← Voltar</a></div>
+    <section class="card header-card">
+      <p class="badge badge-primary">Cadastro de cliente</p>
+      <h1>Novo cliente</h1>
+      <p>Informe os dados obrigatórios e os dados do veículo.</p>
+    </section>
+
+    <section class="card section-card" style="margin-top:24px;">
+      <div class="grid-2">
+        <div>
+          <label class="label">Nome</label>
+          <input class="form-field" type="text" placeholder="Nome do cliente" />
+        </div>
+        <div>
+          <label class="label">Telefone</label>
+          <input class="form-field" type="tel" placeholder="(00) 00000-0000" />
+        </div>
+        <div>
+          <label class="label">Marca do veículo</label>
+          <input class="form-field" type="text" placeholder="Marca" />
+        </div>
+        <div>
+          <label class="label">Modelo / Veículo</label>
+          <input class="form-field" type="text" placeholder="Modelo" />
+        </div>
+        <div>
+          <label class="label">Cor do veículo</label>
+          <input class="form-field" type="text" placeholder="Cor" />
+        </div>
+        <div>
+          <label class="label">Placa do veículo</label>
+          <input class="form-field" type="text" placeholder="ABC-1234" />
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:24px;">
+        <div>
+          <label class="label">CPF</label>
+          <input class="form-field" type="text" placeholder="000.000.000-00" />
+        </div>
+        <div>
+          <label class="label">Local onde mora</label>
+          <input class="form-field" type="text" placeholder="Bairro, cidade" />
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="label">Descrição</label>
+        <textarea class="form-textarea" placeholder="Anotações adicionais"></textarea>
+      </div>
+
+      <div style="margin-top:24px; text-align:right;">
+        <button class="btn btn-primary">Salvar cliente</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

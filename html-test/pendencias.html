@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pendências - Sistema de Mecânica</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <div class="page-nav"><a href="index.html">← Voltar</a></div>
+    <section class="card header-card">
+      <p class="badge badge-primary">Pendências</p>
+      <h1>Clientes com pendências</h1>
+      <p>Veja clientes com valores em aberto e serviços relacionados à dívida.</p>
+    </section>
+
+    <section class="card section-card" style="margin-top:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+          <h2>Acompanhe as pendências</h2>
+          <p style="color:#64748B; margin-top:8px;">O relatório será exibido assim que houver débitos registrados.</p>
+        </div>
+        <span class="badge badge-primary">2 pendência(s)</span>
+      </div>
+
+      <div class="table-wrapper" style="margin-top:24px;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Carro</th>
+              <th>Valor devido</th>
+              <th>Serviço</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Maria Santos</td>
+              <td>Volkswagen Gol</td>
+              <td class="badge badge-danger">R$ 450,00</td>
+              <td>Troca de óleo e pastilhas</td>
+            </tr>
+            <tr>
+              <td>Carlos Souza</td>
+              <td>Chevrolet Onix</td>
+              <td class="badge badge-danger">R$ 320,00</td>
+              <td>Revisão de freios</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

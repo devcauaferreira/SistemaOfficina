@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notas - Sistema de Mecânica</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <div class="page-nav"><a href="index.html">← Voltar</a></div>
+    <section class="card header-card">
+      <p class="badge badge-primary">Notas</p>
+      <h1>Lista de notas</h1>
+      <p>Pesquise notas por cliente, carro ou data.</p>
+    </section>
+
+    <section class="card section-card" style="margin-top:24px;">
+      <div class="grid-2">
+        <input class="form-field" type="search" placeholder="Pesquisar por cliente, carro ou data" />
+        <button class="btn btn-primary">Buscar</button>
+      </div>
+
+      <article class="card" style="margin-top:24px; padding:24px;">
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div>
+            <p class="badge badge-primary">Serviço concluído</p>
+            <h2 style="margin:12px 0 0;">João Silva — Fiat Uno</h2>
+            <p style="color:#64748B; margin-top:8px;">Pagamento: Crédito · Guincho: Não</p>
+          </div>
+          <a href="#" class="btn btn-secondary">Imprimir</a>
+        </div>
+
+        <div class="grid-3" style="margin-top:24px;">
+          <div class="card" style="padding:18px;">
+            <p>Total</p>
+            <strong>R$ 1.150,00</strong>
+          </div>
+          <div class="card" style="padding:18px;">
+            <p>Desconto</p>
+            <strong>10%</strong>
+          </div>
+          <div class="card" style="padding:18px;">
+            <p>Valor final</p>
+            <strong>R$ 1.035,00</strong>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

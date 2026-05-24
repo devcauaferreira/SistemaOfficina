@@ -1,0 +1,6 @@
+Crie a estrutura inicial do projeto Sistema de Mecanica
+
+Leia e respeite os arquivos:
+- AGENTS.md
+- MEMORY.md
+- DESIGN_SYSTEM.md

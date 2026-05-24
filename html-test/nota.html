@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nova nota - Sistema de Mecânica</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <div class="page-nav"><a href="index.html">← Voltar</a></div>
+    <section class="card header-card">
+      <p class="badge badge-primary">Nova nota</p>
+      <h1>Registrar serviço</h1>
+      <p>Preencha os dados do cliente, serviço e peças utilizadas.</p>
+    </section>
+
+    <section class="card section-card" style="margin-top:24px;">
+      <div class="grid-3">
+        <div>
+          <label class="label" for="cliente">Nome do cliente</label>
+          <input id="cliente" type="text" class="form-field" placeholder="Nome do cliente" />
+        </div>
+        <div>
+          <label class="label" for="carro">Carro</label>
+          <input id="carro" type="text" class="form-field" placeholder="Marca e modelo" />
+        </div>
+        <div>
+          <label class="label" for="tipo">Tipo de nota</label>
+          <select id="tipo" class="form-select">
+            <option>Serviço em aberto</option>
+            <option>Concluído</option>
+            <option>Orçamento</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:24px;">
+        <div>
+          <label class="label" for="pagamento">Forma de pagamento</label>
+          <select id="pagamento" class="form-select">
+            <option>Dinheiro</option>
+            <option>Débito</option>
+            <option>Crédito</option>
+            <option>Pix</option>
+            <option>Cheque</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="guincho">Teve guincho?</label>
+          <select id="guincho" class="form-select">
+            <option>Não</option>
+            <option>Sim</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="valor-devido">Valor devido</label>
+          <input id="valor-devido" type="text" class="form-field" placeholder="R$ 0,00" />
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="label" for="servicos">Serviços realizados</label>
+        <textarea id="servicos" class="form-textarea" placeholder="Descreva os serviços executados"></textarea>
+      </div>
+
+      <section class="card" style="padding:24px; margin-top:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h2>Peças utilizadas</h2>
+            <p style="color:#64748B; margin-top:8px;">Adicione cada peça usada no serviço.</p>
+          </div>
+          <a href="#" class="btn btn-primary">Adicionar peça</a>
+        </div>
+
+        <div class="grid-3" style="margin-top:24px;">
+          <input class="form-field" type="text" placeholder="Nome da peça" />
+          <input class="form-field" type="number" placeholder="Quantidade" />
+          <input class="form-field" type="number" placeholder="Preço unitário" />
+        </div>
+
+        <div class="table-wrapper" style="margin-top:24px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Peça</th>
+                <th>Quantidade</th>
+                <th>Preço</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4" style="text-align:center; padding:24px; color:#64748B;">Nenhuma peça adicionada ainda.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="grid-3" style="margin-top:24px;">
+        <div>
+          <label class="label" for="desconto">Desconto</label>
+          <input id="desconto" class="form-field" type="text" placeholder="Ex: 10% ou 50" />
+        </div>
+        <div>
+          <label class="label" for="descricao">Informações adicionais</label>
+          <textarea id="descricao" class="form-textarea" placeholder="Observações" style="min-height:120px;"></textarea>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:24px;">
+        <div class="card" style="padding:18px;">
+          <p>Total peças</p>
+          <strong>R$ 0,00</strong>
+        </div>
+        <div class="card" style="padding:18px;">
+          <p>Desconto</p>
+          <strong>R$ 0,00</strong>
+        </div>
+        <div class="card" style="padding:18px;">
+          <p>Valor final</p>
+          <strong>R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; text-align:right;">
+        <button class="btn btn-primary">Concluir nota</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
