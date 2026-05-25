@@ -16,9 +16,9 @@ export function renderHome(root) {
         <a href="#nota" class="card flex h-full flex-col justify-between gap-4 p-6 hover:border-primary hover:shadow-md">
           <div>
             <p class="text-sm font-semibold uppercase text-primary">Registrar</p>
-            <h2 class="mt-3 text-xl font-bold text-slate-900">Nova nota</h2>
+            <h2 class="mt-3 text-xl font-bold text-slate-900">Novo orçamento</h2>
           </div>
-          <span class="status-badge">Registrar nova nota</span>
+          <span class="status-badge">Registrar novo orçamento</span>
         </a>
 
         <a href="#notas" class="card flex h-full flex-col justify-between gap-4 p-6 hover:border-primary hover:shadow-md">

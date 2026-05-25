@@ -173,8 +173,8 @@ export function renderNota(root) {
   root.querySelector('#nota-form').addEventListener('submit', (event) => submitForm(event, root));
   root.querySelector('#desconto').addEventListener('input', () => updateTotals(root));
   root.querySelector('#valor-servicos').addEventListener('input', () => updateTotals(root));
-  root.querySelector('#piece-name').addEventListener('input', () => fillPiecePriceFromStock(root));
-  root.querySelector('#piece-name').addEventListener('change', () => fillPiecePriceFromStock(root));
+  root.querySelector('#piece-name').addEventListener('input', async () => await fillPiecePriceFromStock(root));
+  root.querySelector('#piece-name').addEventListener('change', async () => await fillPiecePriceFromStock(root));
   root.querySelector('#guincho').addEventListener('change', () => {
     toggleGuinchoField(root);
     updateTotals(root);
@@ -234,10 +234,24 @@ async function getFreshStockItem(name) {
   return stockItem;
 }
 
-function fillPiecePriceFromStock(root) {
+async function fillPiecePriceFromStock(root) {
   const name = root.querySelector('#piece-name').value.trim();
   const priceField = root.querySelector('#piece-price');
-  const stockItem = getStockItem(name);
+
+  if (!name) {
+    priceField.value = '';
+    return;
+  }
+
+  let stockItem = getStockItem(name);
+  if (!stockItem) {
+    try {
+      stockItem = await getFreshStockItem(name);
+    } catch (error) {
+      console.error('Erro ao buscar item do estoque:', error?.message || error);
+      return;
+    }
+  }
 
   if (!stockItem) return;
 
@@ -333,15 +347,21 @@ function updateTotals(root) {
 }
 
 async function loadInventory(root) {
+  const pieceList = root.querySelector('#piece-list');
   const { data, error } = await getEstoqueItems();
+
   if (error) {
-    root.querySelector('#piece-list').innerHTML = '';
+    inventory = [];
+    if (pieceList) pieceList.innerHTML = '';
+    console.error('Erro ao carregar inventário do Supabase:', error.message);
     return;
   }
 
   inventory = data || [];
-  root.querySelector('#piece-list').innerHTML = inventory.map((item) => `<option value="${item.nome}"></option>`).join('');
-  fillPiecePriceFromStock(root);
+  if (pieceList) {
+    pieceList.innerHTML = inventory.map((item) => `<option value="${item.nome}"></option>`).join('');
+  }
+  await fillPiecePriceFromStock(root);
 }
 
 async function refreshInventory(root) {
