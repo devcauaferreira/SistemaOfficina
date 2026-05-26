@@ -1,10 +1,11 @@
 import { supabase } from './lib/supabase.js';
 import { renderLogin } from './pages/login.js';
 import { renderHome } from './pages/home.js';
+import { renderEmpresa } from './pages/empresa.js';
 import { renderNota } from './pages/nota.js';
 import { renderNotas } from './pages/notas.js';
 import { renderClientes } from './pages/clientes.js';
-import { renderHistorico } from './pages/historico.js';
+import { renderHistorico, renderHistoricoCliente } from './pages/historico.js';
 import { renderPendencias } from './pages/pendencias.js';
 import { renderEstoque } from './pages/estoque.js';
 
@@ -30,8 +31,10 @@ async function route() {
     if (!root) return;
 
     const hash = window.location.hash.replace('#', '');
+    const [routeName, queryString = ''] = hash.split('?');
+    const params = new URLSearchParams(queryString);
     const user = await getSessionUser();
-    const path = hash || (user ? 'home' : 'login');
+    const path = routeName || (user ? 'home' : 'login');
 
     if (path !== 'login' && !user) {
       window.location.hash = 'login';
@@ -40,36 +43,67 @@ async function route() {
       return;
     }
 
-    root.innerHTML = '';
+    // If on login route, render full-screen login without sidebar
+    if (path === 'login') {
+      root.innerHTML = '';
+      renderLogin(root);
+      return;
+    }
+
+    // layout: sidebar + main content
+    root.innerHTML = `
+      <div class="flex min-h-screen">
+        <aside id="sidebar" class="hidden md:block w-64"></aside>
+        <main id="main-content" class="flex-1"></main>
+      </div>
+    `;
+
+    // render sidebar (lazy import to keep bundle small)
+    try {
+      const { renderSidebar } = await import('./components/sidebar.js');
+      renderSidebar(document.getElementById('sidebar'));
+    } catch (err) {
+      // ignore sidebar errors
+    }
+
+    const main = document.getElementById('main-content');
 
     switch (path) {
       case 'login':
-        renderLogin(root);
+        renderLogin(main);
         break;
       case 'home':
-        renderHome(root);
+        renderHome(main);
+        break;
+      case 'empresa':
+        renderEmpresa(main);
         break;
       case 'nota':
-        renderNota(root);
+        renderNota(main);
         break;
       case 'notas':
-        renderNotas(root);
+        renderNotas(main);
         break;
       case 'clientes':
-        renderClientes(root);
+        renderClientes(main);
         break;
       case 'historico':
-        renderHistorico(root);
+        renderHistorico(main);
+        break;
+      case 'historico-cliente':
+        renderHistoricoCliente(main, params.get('id'));
         break;
       case 'pendencias':
-        renderPendencias(root);
+        renderPendencias(main);
         break;
       case 'estoque':
-        renderEstoque(root);
+        renderEstoque(main);
         break;
       default:
         window.location.hash = user ? 'home' : 'login';
     }
+
+    if (window.lucide) window.lucide.replace();
   } catch (error) {
     root.innerHTML = `
       <main class="mx-auto max-w-3xl px-4 py-10">

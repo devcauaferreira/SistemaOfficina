@@ -5,6 +5,9 @@
 :root {
   color-scheme: light;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --app-primary: #0D9488;
+  --app-primary-hover: #0F766E;
+  --app-accent: #0284C7;
 }
 
 html {
@@ -13,6 +16,12 @@ html {
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  background-image: radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.12), transparent 22%);
+}
+
+#app {
+  @apply min-h-screen px-4 py-6 sm:px-6 lg:px-10;
 }
 
 button,
@@ -23,29 +32,52 @@ textarea {
 }
 
 .card {
-  @apply bg-white rounded-3xl shadow-sm border border-slate-200;
+  @apply bg-white/95 rounded-3xl border border-slate-200/80 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] transition duration-200;
+}
+
+.card:hover {
+  @apply shadow-[0_28px_70px_-35px_rgba(15,23,42,0.25)];
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: white;
+  background-color: var(--app-primary);
+  box-shadow: 0 10px 20px -10px rgba(13,148,136,0.15);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--app-primary-hover);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400;
+  @apply inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white/90 px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:border-primary hover:text-slate-900 focus:outline-none;
 }
 
 .form-field {
-  @apply w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10;
+  @apply w-full rounded-2xl border border-slate-300 bg-white/95 px-5 py-3 text-sm text-slate-900 shadow-sm outline-none transition duration-200;
+}
+
+.form-field:focus {
+  border-color: var(--app-primary);
+  box-shadow: 0 6px 20px -10px var(--app-primary-hover, rgba(15,118,110,0.12));
 }
 
 .status-badge {
-  @apply inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700;
+  @apply inline-flex items-center gap-2 rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-800 shadow-sm;
 }
 
 .section-title {
-  @apply text-xl font-bold text-slate-900;
+  @apply text-2xl font-bold text-slate-900 tracking-tight;
 }
 
 .section-subtitle {
-  @apply text-sm text-slate-500;
+  @apply text-sm text-slate-600;
 }

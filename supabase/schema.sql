@@ -30,6 +30,13 @@ create table if not exists public.clientes (
   cor text not null default '',
   placa text not null,
   cpf text,
+  cep text,
+  rua text,
+  numero text,
+  bairro text,
+  cidade text,
+  estado text,
+  complemento text,
   local text,
   descricao text,
   created_by uuid default auth.uid(),
@@ -45,6 +52,13 @@ alter table public.clientes add column if not exists veiculo text;
 alter table public.clientes add column if not exists cor text default '';
 alter table public.clientes add column if not exists placa text;
 alter table public.clientes add column if not exists cpf text;
+alter table public.clientes add column if not exists cep text;
+alter table public.clientes add column if not exists rua text;
+alter table public.clientes add column if not exists numero text;
+alter table public.clientes add column if not exists bairro text;
+alter table public.clientes add column if not exists cidade text;
+alter table public.clientes add column if not exists estado text;
+alter table public.clientes add column if not exists complemento text;
 alter table public.clientes add column if not exists local text;
 alter table public.clientes add column if not exists descricao text;
 alter table public.clientes add column if not exists created_by uuid default auth.uid();
@@ -56,11 +70,96 @@ update public.clientes set cor = '' where cor is null;
 alter table public.clientes alter column cor set default '';
 alter table public.clientes alter column cor set not null;
 
+-- Normalizar CPFs vazios, inválidos e repetidos antes do índice único
+update public.clientes
+set cpf = null
+where cpf is not null
+  and (
+    regexp_replace(cpf, '\D', '', 'g') = ''
+    or length(regexp_replace(cpf, '\D', '', 'g')) <> 11
+    or regexp_replace(cpf, '\D', '', 'g') in (
+      '00000000000',
+      '11111111111',
+      '22222222222',
+      '33333333333',
+      '44444444444',
+      '55555555555',
+      '66666666666',
+      '77777777777',
+      '88888888888',
+      '99999999999'
+    )
+  );
+
+with clientes_cpf_repetido as (
+  select
+    id,
+    row_number() over (
+      partition by regexp_replace(cpf, '\D', '', 'g')
+      order by created_at asc, id asc
+    ) as ordem
+  from public.clientes
+  where cpf is not null
+    and regexp_replace(cpf, '\D', '', 'g') <> ''
+)
+update public.clientes c
+set cpf = null
+from clientes_cpf_repetido r
+where c.id = r.id
+  and r.ordem > 1;
+
+-- Impedir CPF repetido, ignorando pontos e traços
+create unique index if not exists clientes_cpf_unico_idx
+on public.clientes ((regexp_replace(cpf, '\D', '', 'g')))
+where cpf is not null and regexp_replace(cpf, '\D', '', 'g') <> '';
+
 -- Trigger clientes
 drop trigger if exists set_timestamp_clientes on public.clientes;
 
 create trigger set_timestamp_clientes
 before update on public.clientes
+for each row
+execute function public.set_updated_at();
+
+
+-- =========================================================
+-- Tabela: enderecos
+-- =========================================================
+create table if not exists public.enderecos (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid not null references public.clientes(id) on delete cascade,
+  cep text,
+  rua text,
+  numero text,
+  bairro text,
+  cidade text,
+  estado text,
+  complemento text,
+  endereco_completo text,
+  created_by uuid default auth.uid(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Garantir colunas caso a tabela já existisse antiga
+alter table public.enderecos add column if not exists cliente_id uuid references public.clientes(id) on delete cascade;
+alter table public.enderecos add column if not exists cep text;
+alter table public.enderecos add column if not exists rua text;
+alter table public.enderecos add column if not exists numero text;
+alter table public.enderecos add column if not exists bairro text;
+alter table public.enderecos add column if not exists cidade text;
+alter table public.enderecos add column if not exists estado text;
+alter table public.enderecos add column if not exists complemento text;
+alter table public.enderecos add column if not exists endereco_completo text;
+alter table public.enderecos add column if not exists created_by uuid default auth.uid();
+alter table public.enderecos add column if not exists created_at timestamptz not null default now();
+alter table public.enderecos add column if not exists updated_at timestamptz not null default now();
+
+-- Trigger endereços
+drop trigger if exists set_timestamp_enderecos on public.enderecos;
+
+create trigger set_timestamp_enderecos
+before update on public.enderecos
 for each row
 execute function public.set_updated_at();
 
@@ -304,6 +403,7 @@ where not exists (
 -- Habilitar RLS
 -- =========================================================
 alter table public.clientes enable row level security;
+alter table public.enderecos enable row level security;
 alter table public.notas enable row level security;
 alter table public.estoque enable row level security;
 
@@ -330,6 +430,32 @@ create policy "Atualizar clientes autenticados" on public.clientes
   with check (auth.role() = 'authenticated');
 
 create policy "Excluir clientes autenticados" on public.clientes
+  for delete
+  using (auth.role() = 'authenticated');
+
+
+-- =========================================================
+-- Políticas RLS - endereços
+-- =========================================================
+drop policy if exists "Enderecos autenticados" on public.enderecos;
+drop policy if exists "Inserir enderecos autenticados" on public.enderecos;
+drop policy if exists "Atualizar enderecos autenticados" on public.enderecos;
+drop policy if exists "Excluir enderecos autenticados" on public.enderecos;
+
+create policy "Enderecos autenticados" on public.enderecos
+  for select
+  using (auth.role() = 'authenticated');
+
+create policy "Inserir enderecos autenticados" on public.enderecos
+  for insert
+  with check (auth.role() = 'authenticated');
+
+create policy "Atualizar enderecos autenticados" on public.enderecos
+  for update
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+create policy "Excluir enderecos autenticados" on public.enderecos
   for delete
   using (auth.role() = 'authenticated');
 
@@ -392,5 +518,6 @@ create policy "Excluir estoque autenticado" on public.estoque
 grant usage on schema public to authenticated;
 
 grant select, insert, update, delete on public.clientes to authenticated;
+grant select, insert, update, delete on public.enderecos to authenticated;
 grant select, insert, update, delete on public.notas to authenticated;
 grant select, insert, update, delete on public.estoque to authenticated;

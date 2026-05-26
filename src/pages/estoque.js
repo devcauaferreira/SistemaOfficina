@@ -93,6 +93,7 @@ export async function renderEstoque(root) {
         <div class="flex flex-wrap gap-3">
           <a href="#home" class="btn-secondary">Voltar</a>
           <button id="add-stock-item" class="btn-primary">Adicionar item</button>
+          <button id="register-entry" class="btn-secondary">Registrar entrada</button>
         </div>
       </div>
 
@@ -123,12 +124,36 @@ export async function renderEstoque(root) {
           </table>
         </div>
       </section>
+      <section class="mt-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-slate-900">Histórico de entradas</h3>
+          <button id="clear-entries" class="text-sm text-danger">Limpar histórico</button>
+        </div>
+        <div id="entries-list" class="space-y-2 text-sm text-slate-700">Carregando histórico...</div>
+      </section>
     </div>
   `;
 
   root.querySelector('#add-stock-item').addEventListener('click', () => showItemModal(root));
+  root.querySelector('#register-entry').addEventListener('click', () => showEntryModal(root));
+  root.querySelector('#clear-entries').addEventListener('click', () => {
+    Swal.fire({
+      title: 'Limpar histórico de entradas?',
+      text: 'Isso removerá o histórico localmente.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, limpar',
+      cancelButtonText: 'Cancelar'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        localStorage.removeItem('estoqueEntradas');
+        loadEntries(root);
+      }
+    });
+  });
   root.querySelector('#search-stock').addEventListener('input', () => loadEstoque(root));
   await loadEstoque(root);
+  loadEntries(root);
 }
 
 function formatCurrency(value) {
@@ -293,4 +318,94 @@ async function loadEstoque(root) {
       await loadEstoque(root);
     });
   });
+}
+
+function getEntries() {
+  try {
+    const raw = localStorage.getItem('estoqueEntradas');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveEntry(entry) {
+  const entries = getEntries();
+  entries.unshift(entry);
+  localStorage.setItem('estoqueEntradas', JSON.stringify(entries.slice(0, 200)));
+}
+
+function loadEntries(root) {
+  const list = root.querySelector('#entries-list');
+  const entries = getEntries();
+  if (!entries.length) {
+    list.textContent = 'Nenhuma entrada registrada.';
+    return;
+  }
+
+  list.innerHTML = entries
+    .map((e) => `<div class="border-b py-2"><strong>${e.nome}</strong> · ${e.quantidade} unidades · ${formatCurrency(e.preco)} · ${e.fornecedor || '-'} · ${new Date(e.data).toLocaleString()}</div>`)
+    .join('');
+}
+
+async function showEntryModal(root) {
+  const { data } = await getEstoqueItems();
+  const names = Array.isArray(data) ? data.map((i) => i.nome) : [];
+
+  const result = await Swal.fire({
+    title: 'Registrar entrada',
+    html: `
+      <input id="swal-entry-name" list="stock-names" class="swal2-input" placeholder="Nome da peça" />
+      <datalist id="stock-names">${names.map((n) => `<option value="${n}"></option>`).join('')}</datalist>
+      <input id="swal-entry-quantity" type="number" min="1" class="swal2-input" placeholder="Quantidade" />
+      <input id="swal-entry-price" type="number" min="0" step="0.01" class="swal2-input" placeholder="Preço unitário" />
+      <input id="swal-entry-supplier" type="text" class="swal2-input" placeholder="Fornecedor (opcional)" />
+      <input id="swal-entry-date" type="datetime-local" class="swal2-input" value="${new Date().toISOString().slice(0,16)}" />
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Registrar',
+    preConfirm: () => {
+      const nome = document.getElementById('swal-entry-name').value.trim();
+      const quantidade = Number(document.getElementById('swal-entry-quantity').value);
+      const preco = Number(document.getElementById('swal-entry-price').value);
+      const fornecedor = document.getElementById('swal-entry-supplier').value.trim();
+      const dataVal = document.getElementById('swal-entry-date').value;
+
+      if (!nome) {
+        Swal.showValidationMessage('Nome da peça é obrigatório');
+        return;
+      }
+      if (Number.isNaN(quantidade) || quantidade <= 0) {
+        Swal.showValidationMessage('Quantidade inválida');
+        return;
+      }
+      if (Number.isNaN(preco) || preco < 0) {
+        Swal.showValidationMessage('Preço inválido');
+        return;
+      }
+
+      return { nome, quantidade, preco, fornecedor, data: dataVal || new Date().toISOString() };
+    }
+  });
+
+  if (!result.isConfirmed || !result.value) return;
+
+  const entry = result.value;
+
+  // tentar localizar item existente
+  const { data: items } = await getEstoqueItems();
+  const existing = Array.isArray(items) ? items.find((it) => it.nome === entry.nome) : null;
+
+  if (existing) {
+    const newQty = Number(existing.quantidade || 0) + Number(entry.quantidade);
+    await updateEstoqueItem(existing.id, { quantidade: newQty, preco: entry.preco });
+  } else {
+    await createEstoqueItem({ nome: entry.nome, quantidade: entry.quantidade, preco: entry.preco });
+  }
+
+  saveEntry(entry);
+  await Swal.fire({ icon: 'success', title: 'Entrada registrada' });
+  await loadEstoque(root);
+  loadEntries(root);
 }

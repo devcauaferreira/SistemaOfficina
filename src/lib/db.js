@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 
 export const tables = {
   clientes: 'clientes',
+  enderecos: 'enderecos',
   notas: 'notas',
   estoque: 'estoque'
 };
@@ -12,7 +13,26 @@ function missingSupabaseError() {
 
 export async function createCliente(record) {
   if (!supabase) return missingSupabaseError();
-  return supabase.from(tables.clientes).insert([record]);
+  return supabase.from(tables.clientes).insert([record]).select().single();
+}
+
+export async function createEndereco(record) {
+  if (!supabase) return missingSupabaseError();
+  return supabase.from(tables.enderecos).insert([record]);
+}
+
+export async function updateCliente(id, changes) {
+  if (!supabase) return missingSupabaseError();
+  return supabase.from(tables.clientes).update(changes).eq('id', id);
+}
+
+export async function replaceEnderecosCliente(clienteId, record) {
+  if (!supabase) return missingSupabaseError();
+
+  const deleteResult = await supabase.from(tables.enderecos).delete().eq('cliente_id', clienteId);
+  if (deleteResult.error) return deleteResult;
+
+  return supabase.from(tables.enderecos).insert([{ ...record, cliente_id: clienteId }]);
 }
 
 export async function createNota(record) {
@@ -48,6 +68,23 @@ export async function getClientes(query) {
   }
 
   return builder;
+}
+
+export async function getClienteById(id) {
+  if (!supabase) return missingSupabaseError();
+  return supabase
+    .from(tables.clientes)
+    .select('*')
+    .eq('id', id)
+    .single();
+}
+
+export async function getClientesComCpf() {
+  if (!supabase) return missingSupabaseError();
+  return supabase
+    .from(tables.clientes)
+    .select('id,nome,cpf')
+    .not('cpf', 'is', null);
 }
 
 export async function getPendencias() {
