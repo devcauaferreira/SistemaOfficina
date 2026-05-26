@@ -1,10 +1,12 @@
+import logoUrl from '../assets/logo.svg';
+
 export function renderSidebar(root) {
   if (!root) return;
 
   root.innerHTML = `
     <div class="h-full border-r border-slate-200 bg-white p-6">
       <div class="mb-8 flex items-center gap-3">
-        <img src="/src/assets/logo.svg" alt="Logo" class="h-10 w-10 rounded-md shadow-sm" />
+        <img src="${logoUrl}" alt="Logo" class="h-10 w-10 rounded-md shadow-sm" />
         <div>
           <div class="text-sm font-semibold text-primary">Oficina</div>
           <div class="font-bold text-lg text-slate-900">Mecânica Pro</div>

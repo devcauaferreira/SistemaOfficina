@@ -1,5 +1,6 @@
 import Swal from 'sweetalert2';
 import { getNotas, updateNota } from '../lib/db.js';
+import logoUrl from '../assets/logo.svg';
 
 export async function renderNotas(root) {
   root.innerHTML = `
@@ -125,6 +126,7 @@ function renderNoteCard(note) {
 
 function createPrintDocument(note) {
   const pieces = Array.isArray(note.pecas) ? note.pecas : [];
+  const resolvedLogoUrl = new URL(logoUrl, window.location.href).href;
   return `
     <html lang="pt-BR">
       <head>
@@ -144,7 +146,7 @@ function createPrintDocument(note) {
       </head>
       <body>
         <header>
-          <img src="/src/assets/logo.svg" alt="Logo" />
+          <img src="${resolvedLogoUrl}" alt="Logo" />
           <div>
             <h1>Nota de serviço</h1>
             <div>${note.cliente} · ${note.carro}</div>
