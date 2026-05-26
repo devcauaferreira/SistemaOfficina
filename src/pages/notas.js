@@ -14,10 +14,18 @@ export async function renderNotas(root) {
       </div>
 
       <section class="rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm">
-        <div class="mb-6 grid gap-4 sm:grid-cols-2">
-          <input id="search-notes" class="form-field" type="search" placeholder="Pesquisar por cliente, carro ou data" />
-          <button id="search-button" class="btn-primary">Buscar</button>
-        </div>
+            <div class="mb-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <input id="search-notes" class="form-field" type="search" placeholder="Pesquisar por cliente, carro ou data" />
+              <select id="filter-status" class="form-field">
+                <option value="all">Todos os status</option>
+                <option value="Orçamento">Orçamento</option>
+                <option value="Em aberto">Em aberto</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+              <button id="search-button" class="btn-primary">Buscar</button>
+            </div>
 
         <div id="notes-list" class="space-y-4"></div>
       </section>
@@ -25,6 +33,8 @@ export async function renderNotas(root) {
   `;
 
   root.querySelector('#search-button').addEventListener('click', () => loadNotes(root));
+  root.querySelector('#filter-status').addEventListener('change', () => loadNotes(root));
+  root.querySelector('#search-notes').addEventListener('keyup', (e) => { if (e.key === 'Enter') loadNotes(root); });
   await loadNotes(root);
 }
 
@@ -38,7 +48,19 @@ function formatDate(value) {
 }
 
 function formatCurrency(value) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function getPaymentMethod(payment) {
+  const text = String(payment || '');
+  if (text.startsWith('Crédito')) return 'Credito';
+  if (text === 'Débito') return 'Debito';
+  return text;
+}
+
+function getCreditInstallments(payment) {
+  const match = String(payment || '').match(/\((\d+)x|\b(\d+)\s*parcela/i);
+  return Number(match?.[1] || match?.[2] || 1);
 }
 
 function renderNoteCard(note) {
@@ -62,6 +84,9 @@ function renderNoteCard(note) {
 
   if (note.tipo === 'Pendente') {
     actions.push(`<button data-complete="${note.id}" class="btn-primary">Concluir</button>`);
+  }
+  if (note.tipo !== 'Cancelado') {
+    actions.push(`<button data-cancel="${note.id}" class="btn-secondary">Cancelar</button>`);
   }
 
   return `
@@ -112,10 +137,19 @@ function createPrintDocument(note) {
           th, td { border: 1px solid #CBD5E1; padding: 10px; text-align: left; }
           th { background: #F8FAFC; }
           .badge { display: inline-block; padding: 6px 12px; background: #E2E8F0; border-radius: 999px; margin-bottom: 12px; }
+          header { display:flex; align-items:center; gap:16px; margin-bottom:20px }
+          header img { height:48px }
+          footer { margin-top:24px; border-top:1px solid #E6E6E6; padding-top:12px; font-size:12px; color:#6B7280 }
         </style>
       </head>
       <body>
-        <h1>Nota de serviço</h1>
+        <header>
+          <img src="/src/assets/logo.svg" alt="Logo" />
+          <div>
+            <h1>Nota de serviço</h1>
+            <div>${note.cliente} · ${note.carro}</div>
+          </div>
+        </header>
         <p><strong>Cliente:</strong> ${note.cliente}</p>
         <p><strong>Carro:</strong> ${note.carro}</p>
         <p><strong>Tipo:</strong> ${note.tipo}</p>
@@ -155,6 +189,10 @@ function createPrintDocument(note) {
         <p><strong>Desconto:</strong> ${note.desconto_text || 'R$ 0,00'}</p>
         <p><strong>Valor final:</strong> ${formatCurrency(note.valor_final || 0)}</p>
         <p><strong>Observações:</strong> ${note.observacoes || '-'}</p>
+        <footer>
+          <div>Gerado pelo Sistema de Mecânica</div>
+          <div>https://seu-sistema.local</div>
+        </footer>
       </body>
     </html>
   `;
@@ -176,14 +214,16 @@ async function loadNotes(root) {
     return;
   }
 
+  const statusFilter = root.querySelector('#filter-status')?.value || 'all';
   const filtered = Array.isArray(data)
     ? data.filter((note) => {
         const lower = query.toLowerCase();
-        return (
+        const matchesQuery =
           note.cliente?.toLowerCase().includes(lower) ||
           note.carro?.toLowerCase().includes(lower) ||
-          formatDate(note.created_at).includes(lower)
-        );
+          formatDate(note.created_at).includes(lower);
+        const matchesStatus = statusFilter === 'all' ? true : note.tipo === statusFilter;
+        return matchesQuery && matchesStatus;
       })
     : [];
 
@@ -225,7 +265,51 @@ async function loadNotes(root) {
 
   notesList.querySelectorAll('[data-pending]').forEach((button) => {
     button.addEventListener('click', async () => {
-      await changeNoteStatus(root, button.dataset.pending, { tipo: 'Pendente' }, 'movida para pendências');
+      const note = filtered.find((item) => item.id === button.dataset.pending);
+      if (!note) return;
+      await changeNoteStatus(
+        root,
+        note.id,
+        {
+          tipo: 'Pendente',
+          valor_devido: Number(note.valor_devido || note.valor_final || 0)
+        },
+        'movida para pendências'
+      );
+    });
+  });
+
+  notesList.querySelectorAll('[data-cancel]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const note = filtered.find((item) => item.id === button.dataset.cancel);
+      if (!note) return;
+
+      const { value: observation, isConfirmed } = await Swal.fire({
+        title: 'Motivo do cancelamento',
+        input: 'textarea',
+        inputLabel: 'Observações (opcional)',
+        inputPlaceholder: 'Descreva o motivo do cancelamento...',
+        showCancelButton: true,
+        confirmButtonText: 'Cancelar nota',
+        cancelButtonText: 'Voltar'
+      });
+
+      if (!isConfirmed) return;
+
+      const changes = {
+        tipo: 'Cancelado',
+        observacoes: `${note.observacoes || ''}\n[CANCELAMENTO] ${observation || ''}`,
+        data_cancelamento: new Date().toISOString()
+      };
+
+      const { error } = await updateNota(note.id, changes);
+      if (error) {
+        await Swal.fire({ icon: 'error', title: 'Erro', text: error.message });
+        return;
+      }
+
+      await Swal.fire({ icon: 'success', title: 'Nota cancelada', text: 'A nota foi marcada como cancelada.' });
+      await loadNotes(root);
     });
   });
 
@@ -290,21 +374,59 @@ async function askPaymentMethod(existingPayment) {
     Pix: 'Pix',
     Cheque: 'Cheque'
   };
+  const existingMethod = getPaymentMethod(existingPayment);
+  const existingInstallments = getCreditInstallments(existingPayment);
 
   const { value, isConfirmed } = await Swal.fire({
     title: 'Forma de pagamento',
-    input: 'select',
-    inputOptions: paymentOptions,
-    inputValue: existingPayment || '',
-    inputPlaceholder: 'Selecione a forma de pagamento',
+    html: `
+      <div class="space-y-4 text-left">
+        <label class="block text-sm font-medium text-slate-700" for="swal-payment-method">Forma de pagamento</label>
+        <select id="swal-payment-method" class="swal2-select" style="display:block;width:100%;margin:0;">
+          <option value="">Selecione a forma de pagamento</option>
+          ${Object.entries(paymentOptions)
+            .map(([value, label]) => `<option value="${value}" ${value === existingMethod ? 'selected' : ''}>${label}</option>`)
+            .join('')}
+        </select>
+        <div id="swal-installments-field" style="display:none;">
+          <label class="block text-sm font-medium text-slate-700" for="swal-credit-installments">Quantidade de parcelas</label>
+          <input id="swal-credit-installments" class="swal2-input" type="number" min="1" max="24" step="1" value="${existingInstallments}" style="width:100%;margin:0;" />
+        </div>
+      </div>
+    `,
     showCancelButton: true,
     confirmButtonText: 'Confirmar',
     cancelButtonText: 'Cancelar',
-    preConfirm: (payment) => {
+    didOpen: () => {
+      const paymentField = Swal.getPopup().querySelector('#swal-payment-method');
+      const installmentsField = Swal.getPopup().querySelector('#swal-installments-field');
+      const toggleInstallments = () => {
+        installmentsField.style.display = paymentField.value === 'Credito' ? 'block' : 'none';
+      };
+
+      paymentField.addEventListener('change', toggleInstallments);
+      toggleInstallments();
+    },
+    preConfirm: () => {
+      const popup = Swal.getPopup();
+      const payment = popup.querySelector('#swal-payment-method').value;
+      const installments = Number(popup.querySelector('#swal-credit-installments').value);
+
       if (!payment) {
         Swal.showValidationMessage('Escolha uma forma de pagamento.');
+        return false;
       }
-      return payment;
+
+      if (payment === 'Credito') {
+        if (!Number.isInteger(installments) || installments < 1 || installments > 24) {
+          Swal.showValidationMessage('Informe uma quantidade de parcelas entre 1 e 24.');
+          return false;
+        }
+
+        return installments === 1 ? 'Crédito (1 parcela)' : `Crédito (${installments}x)`;
+      }
+
+      return paymentOptions[payment];
     }
   });
 

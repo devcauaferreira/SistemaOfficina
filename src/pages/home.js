@@ -60,12 +60,6 @@ export function renderHome(root) {
           </div>
           <span class="status-badge">Ver pendências</span>
         </a>
-
-        <div class="card p-6">
-          <p class="text-sm font-semibold uppercase text-primary">Status</p>
-          <h2 class="mt-3 text-xl font-bold text-slate-900">Controle rápido</h2>
-          <p class="mt-2 text-sm text-slate-500">A navegação principal já está pronta. Use este painel para iniciar cada fluxo do sistema.</p>
-        </div>
       </section>
     </div>
   `;

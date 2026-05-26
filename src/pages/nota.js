@@ -1,6 +1,8 @@
 import Swal from 'sweetalert2';
 import { createNota, getEstoqueItemByNome, getEstoqueItems, updateEstoqueQuantity, getClientes } from '../lib/db.js';
 
+const MAX_DISCOUNT_PERCENT = 50; // limite padrão de desconto
+
 let pieces = [];
 let inventory = [];
 let clientes = [];
@@ -12,6 +14,7 @@ async function loadClientes(root) {
     return;
   }
   clientes = data || [];
+  clientes.sort((a, b) => (String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR')));
   const clientesList = root.querySelector('#cliente-list');
   if (clientesList) {
     clientesList.innerHTML = clientes.map((c) => `<option value="${c.nome}"></option>`).join('');
@@ -52,6 +55,10 @@ export function renderNota(root) {
             <label class="mb-2 block text-sm font-medium text-slate-700">Nome do cliente</label>
             <input id="cliente" class="form-field" type="text" required list="cliente-list" placeholder="Selecione um cliente" />
             <datalist id="cliente-list"></datalist>
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700">Mecânico</label>
+            <input id="mecanico" class="form-field" type="text" placeholder="Nome do mecânico responsável" />
           </div>
           <div>
             <label class="mb-2 block text-sm font-medium text-slate-700">Carro</label>
@@ -172,6 +179,8 @@ export function renderNota(root) {
   root.querySelector('#clear-button').addEventListener('click', () => clearForm(root));
   root.querySelector('#nota-form').addEventListener('submit', (event) => submitForm(event, root));
   root.querySelector('#desconto').addEventListener('input', () => updateTotals(root));
+  // limitar desconto máximo em 50% por padrão
+  const MAX_DISCOUNT_PERCENT = 50;
   root.querySelector('#valor-servicos').addEventListener('input', () => updateTotals(root));
   root.querySelector('#piece-name').addEventListener('input', async () => await fillPiecePriceFromStock(root));
   root.querySelector('#piece-name').addEventListener('change', async () => await fillPiecePriceFromStock(root));
@@ -267,6 +276,7 @@ function parseDiscount(value, total) {
   if (text.endsWith('%')) {
     const percent = Number(text.slice(0, -1).replace(',', '.'));
     if (Number.isNaN(percent) || percent < 0) return null;
+    if (percent > MAX_DISCOUNT_PERCENT) return null; // inválido por exceder limite
     return { amount: (total * percent) / 100, label: `${percent.toFixed(2)}%` };
   }
 
@@ -335,13 +345,13 @@ function updateTotals(root) {
 
   if (!discountInfo) {
     root.querySelector('#discount-value').textContent = 'Desconto inválido';
-    root.querySelector('#total-valor').textContent = formatCurrency(total);
+    root.querySelector('#total-valor').textContent = formatCurrency(partsTotal);
     root.querySelector('#final-value').textContent = formatCurrency(total);
     return;
   }
 
   const final = Math.max(total - discountInfo.amount, 0);
-  root.querySelector('#total-valor').textContent = formatCurrency(total);
+  root.querySelector('#total-valor').textContent = formatCurrency(partsTotal);
   root.querySelector('#discount-value').textContent = discountInfo.label;
   root.querySelector('#final-value').textContent = formatCurrency(final);
 }
@@ -480,6 +490,7 @@ async function submitForm(event, root) {
   const valorGuincho = guincho ? Number(root.querySelector('#valor-guincho').value) || 0 : 0;
   const descontoText = root.querySelector('#desconto').value.trim();
   const descricao = root.querySelector('#descricao').value.trim();
+  const mecanico = root.querySelector('#mecanico')?.value.trim() || '';
 
   if (!cliente || !carro || !servicos || !guinchoValue) {
     Swal.fire({
@@ -498,7 +509,18 @@ async function submitForm(event, root) {
     });
     return;
   }
+  // validar valores negativos
+  if (valorServicos < 0 || valorGuincho < 0) {
+    Swal.fire({ icon: 'warning', title: 'Valores inválidos', text: 'Valores não podem ser negativos.' });
+    return;
+  }
 
+  for (const p of pieces) {
+    if (p.price < 0 || p.quantity <= 0) {
+      Swal.fire({ icon: 'warning', title: 'Peças inválidas', text: 'Verifique preço e quantidade das peças.' });
+      return;
+    }
+  }
   const partsTotal = pieces.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const total = partsTotal + valorServicos + valorGuincho;
   const discountInfo = parseDiscount(descontoText, total);
@@ -517,6 +539,7 @@ async function submitForm(event, root) {
     cliente,
     carro,
     servicos,
+    mecanico,
     pagamento: '',
     tipo: 'Orçamento',
     guincho,
@@ -557,6 +580,27 @@ async function submitForm(event, root) {
     title: 'Nota concluída',
     text: 'A nota foi registrada com sucesso.'
   });
+
+  const printNow = await Swal.fire({
+    icon: 'question',
+    title: 'Deseja imprimir agora?',
+    showCancelButton: true,
+    confirmButtonText: 'Imprimir agora',
+    cancelButtonText: 'Não'
+  });
+
+  if (printNow.isConfirmed) {
+    // abrir janela de impressão com os dados do orçamento
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(createPrintDocument(noteRecord));
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    } else {
+      Swal.fire({ icon: 'error', title: 'Falha ao abrir impressão', text: 'Permita pop-ups para imprimir.' });
+    }
+  }
 
   window.location.hash = 'home';
 }

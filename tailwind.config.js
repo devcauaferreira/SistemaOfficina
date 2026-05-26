@@ -3,12 +3,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#2563EB',
-        'primary-hover': '#1D4ED8',
-        secondary: '#64748B',
+        primary: '#0D9488',
+        'primary-hover': '#0F766E',
+        secondary: '#0284C7',
         success: '#16A34A',
-        warning: '#F59E0B',
-        danger: '#DC2626'
+        warning: '#F97316',
+        danger: '#EF4444'
       }
     }
   },
