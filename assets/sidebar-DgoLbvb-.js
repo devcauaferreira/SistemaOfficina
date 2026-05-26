@@ -1,7 +1,7 @@
-function n(o){if(!o)return;o.innerHTML=`
+import{l as n}from"./index-H0E6emLw.js";function m(o){if(!o)return;o.innerHTML=`
     <div class="h-full border-r border-slate-200 bg-white p-6">
       <div class="mb-8 flex items-center gap-3">
-        <img src="/src/assets/logo.svg" alt="Logo" class="h-10 w-10 rounded-md shadow-sm" />
+        <img src="${n}" alt="Logo" class="h-10 w-10 rounded-md shadow-sm" />
         <div>
           <div class="text-sm font-semibold text-primary">Oficina</div>
           <div class="font-bold text-lg text-slate-900">Mecânica Pro</div>
@@ -52,4 +52,4 @@ function n(o){if(!o)return;o.innerHTML=`
         </div>
       </div>
     </div>
-  `,window.lucide&&window.lucide.replace();const c=e=>{document.documentElement.style.setProperty("--app-primary",e);try{const t=i(e,-12);document.documentElement.style.setProperty("--app-primary-hover",t)}catch{}},d=localStorage.getItem("app:primary");d&&c(d),document.querySelectorAll(".theme-swatch").forEach(e=>{e.addEventListener("click",t=>{const a=e.getAttribute("data-color");c(a),localStorage.setItem("app:primary",a)})});function i(e,t){e=e.replace("#","");const a=parseInt(e,16);let s=(a>>16)+t,l=(a>>8&255)+t,r=(a&255)+t;return s=Math.max(Math.min(255,s),0),l=Math.max(Math.min(255,l),0),r=Math.max(Math.min(255,r),0),"#"+(s<<16|l<<8|r).toString(16).padStart(6,"0")}}export{n as default,n as renderSidebar};
+  `,window.lucide&&window.lucide.replace();const c=e=>{document.documentElement.style.setProperty("--app-primary",e);try{const t=i(e,-12);document.documentElement.style.setProperty("--app-primary-hover",t)}catch{}},d=localStorage.getItem("app:primary");d&&c(d),document.querySelectorAll(".theme-swatch").forEach(e=>{e.addEventListener("click",t=>{const a=e.getAttribute("data-color");c(a),localStorage.setItem("app:primary",a)})});function i(e,t){e=e.replace("#","");const a=parseInt(e,16);let s=(a>>16)+t,l=(a>>8&255)+t,r=(a&255)+t;return s=Math.max(Math.min(255,s),0),l=Math.max(Math.min(255,l),0),r=Math.max(Math.min(255,r),0),"#"+(s<<16|l<<8|r).toString(16).padStart(6,"0")}}export{m as default,m as renderSidebar};
