@@ -3,7 +3,8 @@ import { createCliente, createEndereco, getClientesComCpf } from '../lib/db.js';
 
 export function renderClientes(root) {
   root.innerHTML = `
-    <div class="mx-auto max-w-6xl px-4 py-8">
+    <div class="page-shell">
+      <div class="mx-auto max-w-6xl px-4 py-8">
       <div class="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <p class="text-sm font-semibold uppercase text-primary">Cadastro de cliente</p>
@@ -122,6 +123,7 @@ export function renderClientes(root) {
           <button type="submit" class="btn-primary">Salvar cliente</button>
         </div>
       </form>
+      </div>
     </div>
   `;
 

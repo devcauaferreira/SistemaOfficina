@@ -83,7 +83,8 @@ const availableStockNames = [
 
 export async function renderEstoque(root) {
   root.innerHTML = `
-    <div class="mx-auto max-w-6xl px-4 py-8">
+    <div class="page-shell">
+      <div class="mx-auto max-w-6xl px-4 py-8">
       <div class="mb-8 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <p class="text-sm font-semibold uppercase text-primary">Estoque</p>
@@ -131,6 +132,7 @@ export async function renderEstoque(root) {
         </div>
         <div id="entries-list" class="space-y-2 text-sm text-slate-700">Carregando histórico...</div>
       </section>
+      </div>
     </div>
   `;
 
@@ -165,12 +167,23 @@ async function showItemModal(root, item = null) {
   const result = await Swal.fire({
     title: isEdit ? 'Editar item de estoque' : 'Adicionar item de estoque',
     html: `
-      <input id="swal-name" list="stock-names" class="swal2-input" placeholder="Nome da peça" value="${item?.nome || ''}" />
-      <datalist id="stock-names">
-        ${availableStockNames.map((name) => `<option value="${name}"></option>`).join('')}
-      </datalist>
-      <input id="swal-quantity" type="number" min="0" class="swal2-input" placeholder="Quantidade" value="${item?.quantidade ?? 0}" />
-      <input id="swal-price" type="number" min="0" step="0.01" class="swal2-input" placeholder="Preço unitário" value="${item?.preco ?? 0}" />
+      <div class="space-y-4 text-left">
+        <div>
+          <label for="swal-name" class="mb-1 block text-sm font-medium text-slate-700">Peça</label>
+          <input id="swal-name" list="stock-names" class="swal2-input !m-0 !w-full" placeholder="Nome da peça" value="${item?.nome || ''}" />
+        </div>
+        <datalist id="stock-names">
+          ${availableStockNames.map((name) => `<option value="${name}"></option>`).join('')}
+        </datalist>
+        <div>
+          <label for="swal-quantity" class="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
+          <input id="swal-quantity" type="number" min="0" class="swal2-input !m-0 !w-full" placeholder="Quantidade" value="${item?.quantidade ?? 0}" />
+        </div>
+        <div>
+          <label for="swal-price" class="mb-1 block text-sm font-medium text-slate-700">Preço</label>
+          <input id="swal-price" type="number" min="0" step="0.01" class="swal2-input !m-0 !w-full" placeholder="Preço unitário" value="${item?.preco ?? 0}" />
+        </div>
+      </div>
     `,
     focusConfirm: false,
     showCancelButton: true,
@@ -355,12 +368,29 @@ async function showEntryModal(root) {
   const result = await Swal.fire({
     title: 'Registrar entrada',
     html: `
-      <input id="swal-entry-name" list="stock-names" class="swal2-input" placeholder="Nome da peça" />
-      <datalist id="stock-names">${names.map((n) => `<option value="${n}"></option>`).join('')}</datalist>
-      <input id="swal-entry-quantity" type="number" min="1" class="swal2-input" placeholder="Quantidade" />
-      <input id="swal-entry-price" type="number" min="0" step="0.01" class="swal2-input" placeholder="Preço unitário" />
-      <input id="swal-entry-supplier" type="text" class="swal2-input" placeholder="Fornecedor (opcional)" />
-      <input id="swal-entry-date" type="datetime-local" class="swal2-input" value="${new Date().toISOString().slice(0,16)}" />
+      <div class="space-y-4 text-left">
+        <div>
+          <label for="swal-entry-name" class="mb-1 block text-sm font-medium text-slate-700">Peça</label>
+          <input id="swal-entry-name" list="stock-names" class="swal2-input !m-0 !w-full" placeholder="Nome da peça" />
+        </div>
+        <datalist id="stock-names">${names.map((n) => `<option value="${n}"></option>`).join('')}</datalist>
+        <div>
+          <label for="swal-entry-quantity" class="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
+          <input id="swal-entry-quantity" type="number" min="1" class="swal2-input !m-0 !w-full" placeholder="Quantidade" />
+        </div>
+        <div>
+          <label for="swal-entry-price" class="mb-1 block text-sm font-medium text-slate-700">Preço</label>
+          <input id="swal-entry-price" type="number" min="0" step="0.01" class="swal2-input !m-0 !w-full" placeholder="Preço unitário" />
+        </div>
+        <div>
+          <label for="swal-entry-supplier" class="mb-1 block text-sm font-medium text-slate-700">Fornecedor</label>
+          <input id="swal-entry-supplier" type="text" class="swal2-input !m-0 !w-full" placeholder="Fornecedor (opcional)" />
+        </div>
+        <div>
+          <label for="swal-entry-date" class="mb-1 block text-sm font-medium text-slate-700">Data da entrada</label>
+          <input id="swal-entry-date" type="datetime-local" class="swal2-input !m-0 !w-full" value="${new Date().toISOString().slice(0,16)}" />
+        </div>
+      </div>
     `,
     focusConfirm: false,
     showCancelButton: true,

@@ -1,10 +1,12 @@
 import Swal from 'sweetalert2';
 import { getNotas, updateNota } from '../lib/db.js';
 import logoUrl from '../assets/logo.svg';
+import { buildOrcamentoPrintHtml } from '../lib/print.js';
 
 export async function renderNotas(root) {
   root.innerHTML = `
-    <div class="mx-auto max-w-6xl px-4 py-8">
+    <div class="page-shell">
+      <div class="mx-auto max-w-6xl px-4 py-8">
       <div class="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <p class="text-sm font-semibold uppercase text-primary">Notas</p>
@@ -30,6 +32,7 @@ export async function renderNotas(root) {
 
         <div id="notes-list" class="space-y-4"></div>
       </section>
+      </div>
     </div>
   `;
 
@@ -329,10 +332,9 @@ async function loadNotes(root) {
         });
         return;
       }
-      printWindow.document.write(createPrintDocument(note));
+      printWindow.document.write(buildOrcamentoPrintHtml(note));
       printWindow.document.close();
       printWindow.focus();
-      printWindow.print();
     });
   });
 }

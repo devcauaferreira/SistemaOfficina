@@ -171,7 +171,10 @@ create table if not exists public.notas (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid references public.clientes(id) on delete set null,
   cliente text not null,
+  telefone text,
+  marca text,
   carro text not null,
+  mecanico text not null default '',
   tipo text not null default 'Em aberto',
   servicos text not null,
   valor_servicos numeric(12,2) not null default 0,
@@ -196,7 +199,10 @@ create table if not exists public.notas (
 -- Garantir colunas caso a tabela já existisse antiga
 alter table public.notas add column if not exists cliente_id uuid references public.clientes(id) on delete set null;
 alter table public.notas add column if not exists cliente text;
+alter table public.notas add column if not exists telefone text;
+alter table public.notas add column if not exists marca text;
 alter table public.notas add column if not exists carro text;
+alter table public.notas add column if not exists mecanico text;
 alter table public.notas add column if not exists tipo text default 'Em aberto';
 alter table public.notas add column if not exists servicos text;
 alter table public.notas add column if not exists valor_servicos numeric(12,2) not null default 0;
@@ -218,6 +224,9 @@ alter table public.notas add column if not exists created_at timestamptz not nul
 alter table public.notas add column if not exists updated_at timestamptz not null default now();
 
 update public.notas set tipo = 'Em aberto' where tipo is null;
+update public.notas set telefone = '' where telefone is null;
+update public.notas set marca = '' where marca is null;
+update public.notas set mecanico = '' where mecanico is null;
 update public.notas set valor_servicos = 0 where valor_servicos is null;
 update public.notas set pecas = '[]'::jsonb where pecas is null;
 update public.notas set guincho = false where guincho is null;
@@ -230,6 +239,10 @@ update public.notas set data_inicio = now() where data_inicio is null;
 
 alter table public.notas alter column tipo set default 'Em aberto';
 alter table public.notas alter column tipo set not null;
+alter table public.notas alter column telefone set default '';
+alter table public.notas alter column marca set default '';
+alter table public.notas alter column mecanico set default '';
+alter table public.notas alter column mecanico set not null;
 alter table public.notas alter column valor_servicos set default 0;
 alter table public.notas alter column valor_servicos set not null;
 alter table public.notas alter column pecas set default '[]'::jsonb;

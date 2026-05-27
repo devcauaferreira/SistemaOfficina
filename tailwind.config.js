@@ -3,8 +3,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#0D9488',
-        'primary-hover': '#0F766E',
+        primary: 'rgb(var(--app-primary-rgb) / <alpha-value>)',
+        'primary-hover': 'rgb(var(--app-primary-hover-rgb) / <alpha-value>)',
         secondary: '#0284C7',
         success: '#16A34A',
         warning: '#F97316',

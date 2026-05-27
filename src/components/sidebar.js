@@ -1,15 +1,18 @@
-import logoUrl from '../assets/logo.svg';
+import { applyThemeColor, getCompanyData, getCompanyDisplayName, getCompanyLogo, updateCompanyBranding } from '../lib/company.js';
 
 export function renderSidebar(root) {
   if (!root) return;
 
+  const company = getCompanyData();
+
   root.innerHTML = `
     <div class="h-full border-r border-slate-200 bg-white p-6">
       <div class="mb-8 flex items-center gap-3">
-        <img src="${logoUrl}" alt="Logo" class="h-10 w-10 rounded-md shadow-sm" />
+        <img src="${getCompanyLogo(company)}" alt="Logo da oficina" data-sidebar-logo class="h-10 w-10 rounded-md object-cover shadow-sm" />
         <div>
           <div class="text-sm font-semibold text-primary">Oficina</div>
-          <div class="font-bold text-lg text-slate-900">Mecânica Pro</div>
+          <div class="font-bold text-lg text-slate-900" data-sidebar-company-name>${getCompanyDisplayName(company)}</div>
+          <div class="text-xs text-slate-500" data-sidebar-company-subtitle>${company.razaoSocial || 'Cadastro da oficina'}</div>
         </div>
       </div>
 
@@ -47,57 +50,27 @@ export function renderSidebar(root) {
           Pendências
         </a>
       </nav>
-      <div class="mt-6">
-        <p class="text-sm font-semibold uppercase text-slate-500">Tema</p>
-        <div class="mt-3 flex items-center gap-2">
-          <button class="theme-swatch rounded-md h-8 w-8" data-color="#0D9488" style="background:#0D9488"></button>
-          <button class="theme-swatch rounded-md h-8 w-8" data-color="#0284C7" style="background:#0284C7"></button>
-          <button class="theme-swatch rounded-md h-8 w-8" data-color="#FB923C" style="background:#FB923C"></button>
-          <button class="theme-swatch rounded-md h-8 w-8" data-color="#7C3AED" style="background:#7C3AED"></button>
-        </div>
-      </div>
     </div>
   `;
 
   if (window.lucide) window.lucide.replace();
 
-  // apply stored theme or default
-  const applyTheme = (color) => {
-    const colorMap = {
-      primary: color,
-      hover: color
-    };
-    document.documentElement.style.setProperty('--app-primary', color);
-    // slightly darker for hover
-    try {
-      const darker = shadeColor(color, -12);
-      document.documentElement.style.setProperty('--app-primary-hover', darker);
-    } catch (e) {}
-  };
+  applyThemeColor(company.tema);
+  updateCompanyBranding(company);
 
-  const stored = localStorage.getItem('app:primary');
-  if (stored) applyTheme(stored);
+  if (!window.__empresaSidebarListenerBound) {
+    window.__empresaSidebarListenerBound = true;
+    window.addEventListener('empresa:atualizada', (event) => {
+      const updated = event?.detail || getCompanyData();
+      const logoEl = document.querySelector('[data-sidebar-logo]');
+      const nameEl = document.querySelector('[data-sidebar-company-name]');
+      const subtitleEl = document.querySelector('[data-sidebar-company-subtitle]');
 
-  // attach listeners
-  document.querySelectorAll('.theme-swatch').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const color = btn.getAttribute('data-color');
-      applyTheme(color);
-      localStorage.setItem('app:primary', color);
+      if (logoEl) logoEl.src = getCompanyLogo(updated);
+      if (nameEl) nameEl.textContent = getCompanyDisplayName(updated);
+      if (subtitleEl) subtitleEl.textContent = updated.razaoSocial || 'Cadastro da oficina';
+      applyThemeColor(updated.tema);
     });
-  });
-
-  // helper to shade hex color
-  function shadeColor(hex, percent) {
-    hex = hex.replace('#','');
-    const num = parseInt(hex,16);
-    let r = (num >> 16) + percent;
-    let g = ((num >> 8) & 0x00FF) + percent;
-    let b = (num & 0x0000FF) + percent;
-    r = Math.max(Math.min(255,r),0);
-    g = Math.max(Math.min(255,g),0);
-    b = Math.max(Math.min(255,b),0);
-    return '#' + (r<<16 | g<<8 | b).toString(16).padStart(6,'0');
   }
 }
 

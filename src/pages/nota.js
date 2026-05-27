@@ -1,5 +1,6 @@
 import Swal from 'sweetalert2';
 import { createNota, getEstoqueItemByNome, getEstoqueItems, updateEstoqueQuantity, getClientes } from '../lib/db.js';
+import { buildOrcamentoPrintHtml } from '../lib/print.js';
 
 const MAX_DISCOUNT_PERCENT = 50; // limite padrão de desconto
 
@@ -36,141 +37,182 @@ export function renderNota(root) {
   pieces = [];
   inventory = [];
   root.innerHTML = `
-    <div class="mx-auto max-w-6xl px-4 py-8">
-      <div class="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <p class="text-sm font-semibold uppercase text-primary">Novo orçamento</p>
-          <h1 class="mt-2 text-3xl font-bold text-slate-900">Registrar orçamento</h1>
-          <p class="mt-2 text-sm text-slate-500">Preencha os dados do cliente, serviços, peças e valor para criar um orçamento.</p>
+    <div class="page-shell">
+      <div class="mx-auto max-w-7xl px-4 py-8">
+        <div class="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200/80 bg-white/90 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur md:flex-row md:items-center md:justify-between">
+          <div class="max-w-3xl">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Novo orçamento</p>
+            <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Registrar orçamento</h1>
+            <p class="mt-2 max-w-2xl text-sm text-slate-500">Monte o orçamento com leitura rápida, preços claros e acesso fácil às peças. A tela foi organizada para reduzir ruído visual e acelerar o preenchimento.</p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <a href="#home" class="btn-secondary">Voltar</a>
+            <button id="clear-button" class="btn-secondary">Limpar</button>
+          </div>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <a href="#home" class="btn-secondary">Voltar</a>
-          <button id="clear-button" class="btn-secondary">Limpar</button>
-        </div>
+
+        <form id="nota-form" class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
+          <div class="space-y-6">
+            <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Dados principais</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">Cliente e veículo</h2>
+                </div>
+                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Orçamento</span>
+              </div>
+
+              <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <div class="xl:col-span-1">
+                  <label class="mb-2 block text-sm font-medium text-slate-700">Nome do cliente</label>
+                  <input id="cliente" class="form-field" type="text" required list="cliente-list" placeholder="Selecione um cliente" />
+                  <datalist id="cliente-list"></datalist>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-slate-700">Carro</label>
+                  <input id="carro" class="form-field" type="text" required list="carro-list" placeholder="Informe o veículo" />
+                  <datalist id="carro-list"></datalist>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-slate-700">Mecânico</label>
+                  <input id="mecanico" class="form-field" type="text" placeholder="Nome do mecânico responsável" />
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Serviço</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">Trabalho executado</h2>
+                </div>
+                <div class="rounded-2xl bg-amber-50 px-4 py-2 text-right">
+                  <p class="text-xs font-medium uppercase tracking-[0.12em] text-amber-700">Tipo de registro</p>
+                  <p class="mt-1 text-sm font-semibold text-amber-900">Orçamento</p>
+                </div>
+              </div>
+
+              <div class="grid gap-5 md:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-slate-700">Serviços realizados</label>
+                  <textarea id="servicos" class="form-field min-h-[150px]" placeholder="Descreva os serviços executados" required></textarea>
+                </div>
+                <div class="space-y-5">
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Valor dos serviços</label>
+                    <input id="valor-servicos" class="form-field" type="number" min="0" step="0.01" placeholder="0,00" value="0" />
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Teve guincho?</label>
+                    <select id="guincho" class="form-field" required>
+                      <option value="">Selecione</option>
+                      <option value="Sim">Sim</option>
+                      <option value="Não">Não</option>
+                    </select>
+                  </div>
+                  <div id="guincho-value-field" class="hidden">
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Valor do guincho</label>
+                    <input id="valor-guincho" class="form-field" type="number" min="0" step="0.01" placeholder="0,00" value="0" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p class="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Peças</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">Peças utilizadas</h2>
+                  <p class="mt-1 text-sm text-slate-500">Adicione a peça, a quantidade e o preço para compor o orçamento.</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <button id="refresh-stock" type="button" class="btn-secondary">Atualizar estoque</button>
+                  <button id="add-piece" type="button" class="btn-primary">Adicionar peça</button>
+                </div>
+              </div>
+
+              <div class="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_180px_180px]">
+                <input id="piece-name" class="form-field" type="text" placeholder="Nome da peça" list="piece-list" />
+                <input id="piece-quantity" class="form-field" type="number" min="1" placeholder="Quantidade" />
+                <input id="piece-price" class="form-field" type="number" min="0" step="0.01" placeholder="Preço vindo do estoque" />
+              </div>
+              <datalist id="piece-list"></datalist>
+
+              <div id="pieces-list" class="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                <table class="w-full border-collapse text-sm">
+                  <thead>
+                    <tr class="bg-slate-100 text-left text-slate-600">
+                      <th class="border-b border-slate-200 px-4 py-3">Peça</th>
+                      <th class="border-b border-slate-200 px-4 py-3">Quantidade</th>
+                      <th class="border-b border-slate-200 px-4 py-3">Preço</th>
+                      <th class="border-b border-slate-200 px-4 py-3">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pieces-table" class="bg-white">
+                    <tr>
+                      <td colspan="4" class="px-4 py-6 text-center text-sm text-slate-500">Nenhuma peça adicionada ainda.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="mb-5">
+                <p class="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Complementos</p>
+                <h2 class="mt-1 text-xl font-bold text-slate-900">Desconto e observações</h2>
+              </div>
+
+              <div class="grid gap-5 lg:grid-cols-2">
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-slate-700">Desconto</label>
+                  <input id="desconto" class="form-field" type="text" placeholder="Ex: 10% ou 50" />
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-slate-700">Informações adicionais</label>
+                  <textarea id="descricao" class="form-field min-h-[120px]" placeholder="Observações, anotações ou instruções especiais"></textarea>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="space-y-6 lg:sticky lg:top-6 lg:self-start">
+            <section class="rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white shadow-[0_12px_40px_rgba(15,23,42,0.18)]">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Resumo rápido</p>
+                  <h2 class="mt-2 text-2xl font-bold">Acompanhamento do orçamento</h2>
+                </div>
+                <div class="flex h-16 min-w-16 flex-col items-center justify-center rounded-2xl bg-white/10 px-4 text-center">
+                  <p class="text-[11px] uppercase tracking-[0.18em] text-slate-300">Peças</p>
+                  <p id="pieces-count" class="mt-1 text-lg font-semibold text-white leading-none">0</p>
+                </div>
+              </div>
+
+              <div class="mt-6 grid gap-3">
+                <div class="rounded-2xl bg-white/8 px-4 py-3">
+                  <p class="text-sm text-slate-300">Total peças</p>
+                  <p id="total-valor" class="mt-1 text-2xl font-bold text-white">R$ 0,00</p>
+                </div>
+                <div class="rounded-2xl bg-white/8 px-4 py-3">
+                  <p class="text-sm text-slate-300">Desconto</p>
+                  <p id="discount-value" class="mt-1 text-2xl font-bold text-white">R$ 0,00</p>
+                </div>
+                <div class="rounded-2xl bg-primary/20 px-4 py-3 ring-1 ring-inset ring-primary/30">
+                  <p class="text-sm text-slate-200">Valor final</p>
+                  <p id="final-value" class="mt-1 text-3xl font-bold text-white">R$ 0,00</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <button id="submit-button" type="submit" class="btn-primary w-full sm:w-auto sm:flex-1">Salvar orçamento</button>
+              </div>
+            </section>
+          </aside>
+        </form>
       </div>
-
-      <form id="nota-form" class="space-y-8 rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm">
-        <div class="grid gap-6 lg:grid-cols-3">
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Nome do cliente</label>
-            <input id="cliente" class="form-field" type="text" required list="cliente-list" placeholder="Selecione um cliente" />
-            <datalist id="cliente-list"></datalist>
-          </div>
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Mecânico</label>
-            <input id="mecanico" class="form-field" type="text" placeholder="Nome do mecânico responsável" />
-          </div>
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Carro</label>
-            <input id="carro" class="form-field" type="text" required list="carro-list" />
-            <datalist id="carro-list"></datalist>
-          </div>
-          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-sm font-semibold uppercase text-slate-900">Tipo de registro</p>
-            <p class="mt-2 text-sm text-slate-500">A nota será registrada como <strong>Orçamento</strong>. Depois você pode abrir o serviço.</p>
-          </div>
-        </div>
-
-        <div class="grid gap-6 lg:grid-cols-4">
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Teve guincho?</label>
-            <select id="guincho" class="form-field" required>
-              <option value="">Selecione</option>
-              <option value="Sim">Sim</option>
-              <option value="Não">Não</option>
-            </select>
-          </div>
-          <div id="guincho-value-field" class="hidden">
-            <label class="mb-2 block text-sm font-medium text-slate-700">Valor do guincho</label>
-            <input id="valor-guincho" class="form-field" type="number" min="0" step="0.01" placeholder="0,00" value="0" />
-          </div>
-          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-sm font-semibold uppercase text-slate-900">Pagamento</p>
-            <p class="mt-2 text-sm text-slate-500">A forma de pagamento será registrada na conclusão da nota.</p>
-          </div>
-        </div>
-
-        <div class="grid gap-6 lg:grid-cols-3">
-          <div class="lg:col-span-2">
-            <label class="mb-2 block text-sm font-medium text-slate-700">Serviços realizados</label>
-            <textarea id="servicos" class="form-field min-h-[120px]" placeholder="Descreva os serviços executados" required></textarea>
-          </div>
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Valor dos serviços</label>
-            <input id="valor-servicos" class="form-field" type="number" min="0" step="0.01" placeholder="0,00" value="0" />
-          </div>
-        </div>
-
-        <section class="space-y-5 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-          <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p class="text-sm font-semibold text-slate-900">Peças utilizadas</p>
-              <p class="text-sm text-slate-500">Adicione cada peça usada no serviço.</p>
-            </div>
-            <div class="flex flex-wrap gap-3">
-              <button id="refresh-stock" type="button" class="btn-secondary">Atualizar estoque</button>
-              <button id="add-piece" type="button" class="btn-primary">Adicionar peça</button>
-            </div>
-          </div>
-
-          <div class="grid gap-4 lg:grid-cols-3">
-            <input id="piece-name" class="form-field" type="text" placeholder="Nome da peça" list="piece-list" />
-            <input id="piece-quantity" class="form-field" type="number" min="1" placeholder="Quantidade" />
-            <input id="piece-price" class="form-field" type="number" min="0" step="0.01" placeholder="Preço vindo do estoque" />
-          </div>
-          <datalist id="piece-list"></datalist>
-
-          <div id="pieces-list" class="overflow-x-auto">
-            <table class="w-full border-collapse text-sm">
-              <thead>
-                <tr class="bg-slate-100 text-left text-slate-600">
-                  <th class="border-b border-slate-200 px-4 py-3">Peça</th>
-                  <th class="border-b border-slate-200 px-4 py-3">Quantidade</th>
-                  <th class="border-b border-slate-200 px-4 py-3">Preço</th>
-                  <th class="border-b border-slate-200 px-4 py-3">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="pieces-table" class="bg-white">
-                <tr>
-                  <td colspan="4" class="px-4 py-6 text-center text-sm text-slate-500">Nenhuma peça adicionada ainda.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <div class="grid gap-6 lg:grid-cols-2">
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Desconto</label>
-            <input id="desconto" class="form-field" type="text" placeholder="Ex: 10% ou 50" />
-          </div>
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">Informações adicionais</label>
-            <textarea id="descricao" class="form-field min-h-[120px]" placeholder="Observações, anotações ou instruções especiais"></textarea>
-          </div>
-        </div>
-
-        <section class="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div class="rounded-3xl border border-slate-200 bg-white p-4">
-              <p class="text-sm text-slate-500">Total peças</p>
-              <p id="total-valor" class="mt-2 text-xl font-semibold text-slate-900">R$ 0,00</p>
-            </div>
-            <div class="rounded-3xl border border-slate-200 bg-white p-4">
-              <p class="text-sm text-slate-500">Desconto</p>
-              <p id="discount-value" class="mt-2 text-xl font-semibold text-slate-900">R$ 0,00</p>
-            </div>
-            <div class="rounded-3xl border border-slate-200 bg-white p-4">
-              <p class="text-sm text-slate-500">Valor final</p>
-              <p id="final-value" class="mt-2 text-xl font-semibold text-slate-900">R$ 0,00</p>
-            </div>
-          </div>
-        </section>
-
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-          <button id="submit-button" type="submit" class="btn-primary">Salvar orçamento</button>
-        </div>
-      </form>
     </div>
   `;
 
@@ -287,6 +329,11 @@ function parseDiscount(value, total) {
 
 function updatePiecesTable(root) {
   const table = root.querySelector('#pieces-table');
+  const piecesCount = root.querySelector('#pieces-count');
+
+  if (piecesCount) {
+    piecesCount.textContent = `${pieces.length}`;
+  }
 
   if (pieces.length === 0) {
     table.innerHTML = `
@@ -491,6 +538,7 @@ async function submitForm(event, root) {
   const descontoText = root.querySelector('#desconto').value.trim();
   const descricao = root.querySelector('#descricao').value.trim();
   const mecanico = root.querySelector('#mecanico')?.value.trim() || '';
+  const clienteData = clientes.find((item) => item.nome === cliente);
 
   if (!cliente || !carro || !servicos || !guinchoValue) {
     Swal.fire({
@@ -537,6 +585,8 @@ async function submitForm(event, root) {
 
   const noteRecord = {
     cliente,
+    telefone: clienteData?.telefone || '',
+    marca: clienteData?.marca || '',
     carro,
     servicos,
     mecanico,
@@ -593,10 +643,9 @@ async function submitForm(event, root) {
     // abrir janela de impressão com os dados do orçamento
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(createPrintDocument(noteRecord));
+      printWindow.document.write(buildOrcamentoPrintHtml(noteRecord));
       printWindow.document.close();
       printWindow.focus();
-      printWindow.print();
     } else {
       Swal.fire({ icon: 'error', title: 'Falha ao abrir impressão', text: 'Permita pop-ups para imprimir.' });
     }
